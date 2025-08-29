@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subir Imagen con Drag & Drop</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 40px;
+      background-color: #f0f0f0;
+    }
+
+    #overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+    #overlay.show {
+      display: flex;
+    }
+
+    #dropZone {
+      width: 360px;
+      height: 190px;
+      padding: 20px;
+      border: 3px dashed #999;
+      border-radius: 12px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      color: #666;
+      user-select: none;
+      transition: border-color .3s, background-color .3s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    #dropZone.dragover {
+      border-color: #007BFF;
+      background: #e6f7ff;
+      color: #007BFF;
+    }
+
+    #fileLink {
+      color: #007BFF;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    #closeBtn {
+      padding: 8px 18px;
+      border: 0;
+      border-radius: 8px;
+      background: #007BFF;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    #preview img {
+      margin-top: 25px;
+      max-width: 90%;
+      height: auto;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .hidden-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <h2>Subir y mostrar una imagen</h2>
+
+  <input type="file" id="fileInput" accept="image/*" class="hidden-input" />
+
+  <button id="mainUploadBtn">Seleccionar imagen</button>
+
+  <div id="overlay">
+    <div id="dropZone">
+      <div>
+        Arrastra tu imagen aquí o <span id="fileLink">haz clic aquí</span> para buscar
+      </div>
+      <button id="closeBtn" type="button">Cerrar</button>
+    </div>
+  </div>
+
+  <div id="preview"></div>
+
+  <script>
+    // 1. Selección de elementos del DOM
+    const overlay = document.getElementById('overlay');
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const closeBtn = document.getElementById('closeBtn');
+    const fileLink = document.getElementById('fileLink');
+    const mainUploadBtn = document.getElementById('mainUploadBtn');
+
+    // 2. Funciones para controlar el overlay
+    const openOverlay = () => overlay.classList.add('show');
+    const closeOverlay = () => overlay.classList.remove('show');
+
+    // 3. Lógica para mostrar la imagen
+    function showImage(file) {
+      // Limpiar el contenedor de la imagen anterior
+      preview.innerHTML = '';
+
+      // Validar si el archivo es una imagen
+      if (!file || !file.type.startsWith('image/')) {
+        alert('Por favor, selecciona un archivo de imagen válido.');
+        return;
+      }
+
+      // Usar FileReader para leer el archivo
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        preview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // 4. Manejo de eventos
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // Evento para abrir el overlay con el botón principal
+      mainUploadBtn.addEventListener('click', openOverlay);
+
+      // Evento para abrir el explorador de archivos desde el link
+      fileLink.addEventListener('click', (e) => {
+        e.stopPropagation(); // Previene que el evento llegue a dropZone o overlay
+        fileInput.click();
+      });
+
+      // Evento para cerrar el overlay
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeOverlay();
+      });
+
+      // Cierra el overlay si el usuario hace clic en el fondo oscuro
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          closeOverlay();
+        }
+      });
+
+      // Escucha el evento 'change' del input para cuando se selecciona un archivo
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+          showImage(fileInput.files[0]);
+          closeOverlay();
+          // Limpia el input para permitir seleccionar el mismo archivo de nuevo
+          fileInput.value = '';
+        }
+      });
+
+      // Eventos de Drag & Drop
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+      });
+
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          showImage(file);
+          closeOverlay();
+        }
+      });
+
+    });
+  </script>
+</body>
+</html>
